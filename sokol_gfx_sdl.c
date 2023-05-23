@@ -3,6 +3,8 @@
 
 #include <SDL2/SDL.h>
 
+#include "HandmadeMath.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -65,8 +67,24 @@ bool init_sdl()
     return true;
 }
 
+typedef struct {
+    float mvp[16];
+} vs_params_t;
+
 void frame(void)
 {
+    vs_params_t vs_params = {
+        /*.mvp = { 1, 0, 0, 0,
+                 0, 1, 0, 0,
+                 0, 0, 1, 0,
+                 0, 0, 0, 1};*/
+
+        .mvp = { 1, 0, 0, 0,
+                 0, 1, 0, 0,
+                 0, 0, 1, 0,
+                 0, 0, 0, 1}
+    };
+
     sg_pass_action pass_action = {
         .colors[0] = { .load_action=SG_LOADACTION_CLEAR, .clear_value={0.0f, 0.0f, 0.0f, 1.0f } }
     };
@@ -74,6 +92,7 @@ void frame(void)
     sg_begin_default_pass(&pass_action, window_width, window_height);
     sg_apply_pipeline(pip);
     sg_apply_bindings(&bind);
+    sg_apply_uniforms(SG_SHADERSTAGE_VS, 0, &SG_RANGE(vs_params));
     sg_draw(0, 3, 1);
     sg_end_pass();
     sg_commit();
@@ -118,15 +137,27 @@ int main()
     sg_buffer vbuf = sg_make_buffer(&vbuf_desc);
 
     sg_shader_desc shader_desc = {
+        .vs.uniform_blocks[0] = {
+            .size = sizeof(vs_params_t),
+            .layout = SG_UNIFORMLAYOUT_NATIVE,  // this is the default and can be omitted
+            .uniforms = {
+                // order must be the same as in 'params_t':
+                [0] = { .name = "mvp", .type = SG_UNIFORMTYPE_MAT4 },
+            }
+         },
         .vs.source =
             "#version 330\n"
+            //"uniform vs_params {\n"
+            //"  mat4 mvp;\n"
+            //"};\n"
+            "uniform mat4 mvp;\n"
             "in vec4 a_pos;\n"
             "in vec4 a_col;\n"
             "in vec2 a_uv;\n"
             "out vec4 col;\n"
             "out vec2 uv;\n"
             "void main() {\n"
-            "  gl_Position = a_pos;\n"
+            "  gl_Position = mvp * a_pos;\n"
             "  col = a_col;\n"
             "  uv = a_uv;\n"
             "}\n",
