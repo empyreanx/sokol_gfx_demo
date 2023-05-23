@@ -96,13 +96,6 @@ int main()
                                                       &image_c, 0);
 
     // Sokol Gfx initialization
-    sg_desc desc = {
-        .pipeline_pool_size = 1,
-        .buffer_pool_size = 2,
-        .image_pool_size = 1,
-        .shader_pool_size = 1,
-        .pass_pool_size = 1
-    };
 
     sg_setup(&(sg_desc){
         .logger.func = slog_func
@@ -111,9 +104,9 @@ int main()
     // Create a Sokol Gfx triangle
     float vertices[] = {
         // positions            // colors                //uvs
-         0.0f,  0.5f, 0.5f,     1.0f, 0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
-         0.5f, -0.5f, 0.5f,     0.0f, 1.0f, 0.0f, 1.0f,  0.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f,     0.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f,
+         0.0f,  0.5f, 0.5f,     1.0f, 1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+         0.5f, -0.5f, 0.5f,     1.0f, 1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
+        -0.5f, -0.5f, 0.5f,     1.0f, 1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
     };
 
     sg_buffer_desc vbuf_desc = {
