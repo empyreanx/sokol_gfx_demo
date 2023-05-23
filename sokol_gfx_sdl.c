@@ -1,6 +1,14 @@
 #include <stdio.h>
 #include <stdbool.h>
+
 #include <SDL2/SDL.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+#define SOKOL_LOG_IMPL
+#include "sokol_log.h"
+
 #define SOKOL_IMPL
 #define SOKOL_GLCORE33
 #include "sokol_gfx.h"
@@ -24,9 +32,17 @@ bool init_sdl()
         return false;
     }
 
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 0);
+    SDL_GL_SetAttribute(SDL_GL_RED_SIZE,     8);
+    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE,   8);
+    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,    8);
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE,   8);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, true);
+
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+    SDL_GL_CONTEXT_PROFILE_CORE);
 
     window = SDL_CreateWindow("Sokol Gfx Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width, window_height, SDL_WINDOW_OPENGL);
 
@@ -63,12 +79,21 @@ void frame(void)
     sg_commit();
 }
 
+sg_image img;
+sg_image_data img_data;
+
 int main()
 {
     if (!init_sdl())
     {
         return -1;
     }
+
+    stbi_set_flip_vertically_on_load(true);
+
+    int image_w, image_h, image_c;
+    unsigned char* bitmap = stbi_load("./boomer.png", &image_w, &image_h,
+                                                      &image_c, 0);
 
     // Sokol Gfx initialization
     sg_desc desc = {
@@ -78,14 +103,17 @@ int main()
         .shader_pool_size = 1,
         .pass_pool_size = 1
     };
-    sg_setup(&desc);
+
+    sg_setup(&(sg_desc){
+        .logger.func = slog_func
+    });
 
     // Create a Sokol Gfx triangle
     float vertices[] = {
-        // positions            // colors
-         0.0f,  0.5f, 0.5f,     1.0f, 0.0f, 0.0f, 1.0f,
-         0.5f, -0.5f, 0.5f,     0.0f, 1.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f,     0.0f, 0.0f, 1.0f, 1.0f
+        // positions            // colors                //uvs
+         0.0f,  0.5f, 0.5f,     1.0f, 0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
+         0.5f, -0.5f, 0.5f,     0.0f, 1.0f, 0.0f, 1.0f,  0.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f,     0.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f,
     };
 
     sg_buffer_desc vbuf_desc = {
@@ -93,44 +121,41 @@ int main()
         .data = vertices,
         .label = "vertex buffer"
     };
+
     sg_buffer vbuf = sg_make_buffer(&vbuf_desc);
 
     sg_shader_desc shader_desc = {
-        /*.vs.uniform_blocks[0] = {
-            .size = sizeof(sg_default_uniform_block_t),
-            .uniforms = {
-                [0] = {.name="mvp", .type=SG_UNIFORMTYPE_MAT4}
-            }
-        },*/
-        /*.fs.images[0] = {
-            .name = "tex",
-            .type = SG_IMAGETYPE_2D,
-        },*/
         .vs.source =
             "#version 330\n"
-            //"uniform mat4 mvp;\n"
-            "in vec4 position;\n"
-            "in vec4 color0;\n"
-            "out vec4 color;\n"
+            "in vec4 a_pos;\n"
+            "in vec4 a_col;\n"
+            "in vec2 a_uv;\n"
+            "out vec4 col;\n"
+            "out vec2 uv;\n"
             "void main() {\n"
-            "  gl_Position = position;\n"
-            "  color = color0;\n"
+            "  gl_Position = a_pos;\n"
+            "  col = a_col;\n"
+            "  uv = a_uv;\n"
             "}\n",
         .fs.source =
             "#version 330\n"
-            "in vec4 color;\n"
+            "in vec4 col;\n"
+            "in vec2 uv;\n"
+            "uniform sampler2D u_tex;\n"
             "out vec4 frag_color;\n"
             "void main() {\n"
-            "  frag_color = color;\n"
+            "  frag_color = texture(u_tex, uv) * col;\n"
             "}\n"
     };
+
     sg_shader shader = sg_make_shader(&shader_desc);
 
     sg_pipeline_desc pip_desc = {
         .layout = {
             .attrs = {
                 [0].format = SG_VERTEXFORMAT_FLOAT3,
-                [1].format = SG_VERTEXFORMAT_FLOAT4
+                [1].format = SG_VERTEXFORMAT_FLOAT4,
+                [2].format = SG_VERTEXFORMAT_FLOAT2
             }
         },
         .shader = shader,
@@ -138,7 +163,14 @@ int main()
         .index_type = SG_INDEXTYPE_NONE,
         .label = "pipeline"
     };
+
     pip = sg_make_pipeline(&pip_desc);
+
+    bind.fs_images[0] = sg_make_image(&(sg_image_desc){
+        .width = image_w,
+        .height = image_h,
+        .data.subimage[0][0] = { .ptr = bitmap, .size = image_w * image_h * image_c }
+    });
 
     bind.vertex_buffers[0] = vbuf;
 

@@ -1,1 +1,2 @@
-gcc -o demo sokol_gfx_sdl.c -lSDL2 -lGL
+#!/bin/bash
+gcc -o demo sokol_gfx_sdl.c -lSDL2 -lGL -lm
