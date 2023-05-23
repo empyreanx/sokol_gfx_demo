@@ -137,6 +137,7 @@ int main()
             "  col = a_col;\n"
             "  uv = a_uv;\n"
             "}\n",
+        .fs.images[0] = { .name="u_tex", .image_type=SG_IMAGETYPE_2D },
         .fs.source =
             "#version 330\n"
             "in vec4 col;\n"
