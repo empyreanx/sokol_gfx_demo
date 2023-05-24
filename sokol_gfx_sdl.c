@@ -74,11 +74,6 @@ typedef struct {
 void frame(void)
 {
     vs_params_t vs_params = {
-        /*.mvp = { 1, 0, 0, 0,
-                 0, 1, 0, 0,
-                 0, 0, 1, 0,
-                 0, 0, 0, 1};*/
-
         .mvp = { 1, 0, 0, 0,
                  0, 1, 0, 0,
                  0, 0, 1, 0,
@@ -147,10 +142,10 @@ int main()
          },
         .vs.source =
             "#version 330\n"
-            //"uniform vs_params {\n"
-            //"  mat4 mvp;\n"
-            //"};\n"
-            "uniform mat4 mvp;\n"
+            "uniform vs_params {\n" // <-- DOES NOT WORK
+            "  mat4 mvp;\n"
+            "};\n"
+            //"uniform mat4 mvp;\n" // <-- THIS DOES WORK
             "in vec4 a_pos;\n"
             "in vec4 a_col;\n"
             "in vec2 a_uv;\n"
