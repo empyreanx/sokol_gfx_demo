@@ -67,9 +67,14 @@ bool init_sdl()
     return true;
 }
 
-typedef struct {
+#define SOKOL_SHDC_ALIGN(a) __attribute__((aligned(a)))
+
+#pragma pack(push,1)
+SOKOL_SHDC_ALIGN(16) typedef struct {
     float mvp[16];
+    float scale[4];
 } vs_params_t;
+#pragma pack(pop)
 
 void frame(void)
 {
@@ -77,7 +82,9 @@ void frame(void)
         .mvp = { 1, 0, 0, 0,
                  0, 1, 0, 0,
                  0, 0, 1, 0,
-                 0, 0, 0, 1}
+                 0, 0, 0, 1 },
+
+        .scale = {2, 2, 1, 1}
     };
 
     sg_pass_action pass_action = {
@@ -134,25 +141,34 @@ int main()
     sg_shader_desc shader_desc = {
         .vs.uniform_blocks[0] = {
             .size = sizeof(vs_params_t),
-            .layout = SG_UNIFORMLAYOUT_NATIVE,  // this is the default and can be omitted
+            //.layout = SG_UNIFORMLAYOUT_STD140, //SG_UNIFORMLAYOUT_NATIVE,  // this is the default and can be omitted
             .uniforms = {
-                // order must be the same as in 'params_t':
-                [0] = { .name = "mvp", .type = SG_UNIFORMTYPE_MAT4 },
+                [0] = { .name = "mvp", .type = SG_UNIFORMTYPE_MAT4, .array_count = 1 },
+                [1] = { .name = "scale", .type = SG_UNIFORMTYPE_FLOAT4, .array_count = 1 },
             }
          },
+
+          //           "layout(binding = 0) uniform vs_params {\n" // <-- DOES NOT WORK
         .vs.source =
             "#version 330\n"
-            "uniform vs_params {\n" // <-- DOES NOT WORK
+/*            "uniform vs_params {\n" // <-- DOES NOT WORK
             "  mat4 mvp;\n"
-            "};\n"
-            //"uniform mat4 mvp;\n" // <-- THIS DOES WORK
-            "in vec4 a_pos;\n"
-            "in vec4 a_col;\n"
-            "in vec2 a_uv;\n"
+            "  vec4 scale;\n"
+            "};\n"*/
+            "uniform mat4 mvp;\n" // <-- THIS DOES WORK
+            "uniform vec4 scale;\n"
+
+//            "in vec4 a_pos;\n"
+//            "in vec4 a_col;\n"
+//            "in vec2 a_uv;\n"
+
+            "layout(location = 0) in vec4 a_pos;\n"
+            "layout(location = 1) in vec4 a_col;\n"
+            "layout(location = 2) in vec2 a_uv;\n"
             "out vec4 col;\n"
             "out vec2 uv;\n"
             "void main() {\n"
-            "  gl_Position = mvp * a_pos;\n"
+            "  gl_Position = mvp * scale * a_pos;\n"
             "  col = a_col;\n"
             "  uv = a_uv;\n"
             "}\n",
