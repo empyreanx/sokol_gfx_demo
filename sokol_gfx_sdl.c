@@ -17,7 +17,7 @@
 
 // Sokol Gfx resources
 sg_pipeline pip;
-sg_bindings bind;
+sg_bindings bind = { 0 };
 
 // Window and rendering parameters
 const int window_width = 800;
