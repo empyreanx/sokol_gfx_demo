@@ -103,6 +103,13 @@ void frame(void)
 sg_image img;
 sg_image_data img_data;
 
+typedef struct
+{
+    float pos[3];
+    float color[4];
+    float uv[2];
+} vertex_t
+
 int main()
 {
     if (!init_sdl())
@@ -123,12 +130,18 @@ int main()
     });
 
     // Create a Sokol Gfx triangle
-    float vertices[] = {
+    /*float vertices[] = {
         // positions            // colors                //uvs
          0.0f,  0.5f, 0.5f,     1.0f, 1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
          0.5f, -0.5f, 0.5f,     1.0f, 1.0f, 1.0f, 1.0f,  1.0f, 0.0f,
         -0.5f, -0.5f, 0.5f,     1.0f, 1.0f, 1.0f, 1.0f,  0.0f, 0.0f,
-    };
+    };*/
+
+    vertex_t vertices[] = {
+        { 0.0f,  0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f }
+        { 0.5f, -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f },
+        {-0.5f, -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }. { 0.0f, 0.0f }
+    }
 
     sg_buffer_desc vbuf_desc = {
         .size = sizeof(vertices),
@@ -151,17 +164,8 @@ int main()
           //           "layout(binding = 0) uniform vs_params {\n" // <-- DOES NOT WORK
         .vs.source =
             "#version 330\n"
-/*            "uniform vs_params {\n" // <-- DOES NOT WORK
-            "  mat4 mvp;\n"
-            "  vec4 scale;\n"
-            "};\n"*/
             "uniform mat4 mvp;\n" // <-- THIS DOES WORK
             "uniform vec4 scale;\n"
-
-//            "in vec4 a_pos;\n"
-//            "in vec4 a_col;\n"
-//            "in vec2 a_uv;\n"
-
             "layout(location = 0) in vec4 a_pos;\n"
             "layout(location = 1) in vec4 a_col;\n"
             "layout(location = 2) in vec2 a_uv;\n"
@@ -189,9 +193,9 @@ int main()
     sg_pipeline_desc pip_desc = {
         .layout = {
             .attrs = {
-                [0].format = SG_VERTEXFORMAT_FLOAT3,
-                [1].format = SG_VERTEXFORMAT_FLOAT4,
-                [2].format = SG_VERTEXFORMAT_FLOAT2
+                [0] = { .format = SG_VERTEXFORMAT_FLOAT3, .offset = offsetof(vertex_t, pos) },
+                [1] = { .format = SG_VERTEXFORMAT_FLOAT4, .offset = offsetof(vertex_t, color) },
+                [2] = { .format = SG_VERTEXFORMAT_FLOAT2, .offest = offsetof(vertex_t, uv) }
             }
         },
         .shader = shader,
