@@ -130,7 +130,7 @@ int main()
 
     sg_buffer vbuf = sg_make_buffer(&vbuf_desc);
 
-    sg_shader shader = sg_make_shader(shd_shader_desc(sg_query_backend()));
+    sg_shader shader = sg_make_shader(quad_shader_desc(sg_query_backend()));
 
     sg_pipeline_desc pip_desc = {
         .layout = {

@@ -36,4 +36,4 @@ void main() {
 
 @end
 
-@program shd vs fs
+@program quad vs fs

@@ -143,9 +143,16 @@ int main()
         { {-0.5f, -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } }
     };
 
-    sg_buffer_desc vbuf_desc = {
+    /*sg_buffer_desc vbuf_desc = {
         .size = sizeof(vertex_t) * 3,
         .data = vertices,
+        .label = "vertex buffer"
+    };*/
+
+    sg_buffer_desc vbuf_desc = {
+        .size  = sizeof(vertex_t) * 3,
+        .type  = SG_BUFFERTYPE_VERTEXBUFFER,
+        .data  = { .ptr = vertices, .size = sizeof(vertex_t) * 3 },
         .label = "vertex buffer"
     };
 
